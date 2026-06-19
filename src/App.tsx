@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import gsap from "gsap";
 import { Download, Eraser, Undo2, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,29 +30,74 @@ export default function App() {
 
   const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
+  const scope = useRef<HTMLElement>(null);
+
+  // GSAP: reveal the title letter by letter, pop the dot, float the badge.
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(".title-char", {
+        yPercent: 130,
+        opacity: 0,
+        rotateX: -85,
+        transformOrigin: "50% 100%",
+        duration: 0.9,
+        ease: "back.out(1.7)",
+        stagger: 0.06,
+        delay: 0.15,
+      });
+      gsap.from(".title-dot", {
+        scale: 0,
+        opacity: 0,
+        duration: 0.6,
+        ease: "back.out(3)",
+        delay: 0.75,
+      });
+      gsap.to(".seal-badge", {
+        y: -4,
+        duration: 2.2,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+    }, scope);
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <main className="app-backdrop relative flex min-h-dvh flex-col items-center justify-center px-4 py-10">
+    <main
+      ref={scope}
+      className="app-backdrop relative flex min-h-dvh flex-col items-center justify-center px-4 py-10"
+    >
       <div className="relative z-10 w-full max-w-xl">
         {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease }}
-          className="mb-8 text-center"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1 text-xs font-medium tracking-wide text-muted-foreground backdrop-blur">
+        <header className="mb-8 text-center">
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease }}
+            className="seal-badge inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1 text-xs font-medium tracking-wide text-muted-foreground backdrop-blur"
+          >
             <PenLine className="size-3.5 text-primary" />
             Assinatura eletrônica
-          </span>
-          <h1 className="mt-4 font-serif text-6xl leading-[0.95] tracking-tight text-foreground sm:text-7xl">
-            Assine
-            <span className="text-primary italic">.</span>
+          </motion.span>
+          <h1 className="mt-4 font-serif text-6xl leading-[0.95] tracking-tight text-foreground [perspective:600px] sm:text-7xl">
+            {"Assine".split("").map((ch, i) => (
+              <span key={i} className="title-char inline-block">
+                {ch}
+              </span>
+            ))}
+            <span className="title-dot inline-block text-primary italic">.</span>
           </h1>
-          <p className="mx-auto mt-3 max-w-sm text-pretty text-sm text-muted-foreground">
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease, delay: 0.6 }}
+            className="mx-auto mt-3 max-w-sm text-pretty text-sm text-muted-foreground"
+          >
             Desenhe sua assinatura abaixo e baixe como imagem. Tudo acontece no
             seu navegador — nada é enviado.
-          </p>
-        </motion.header>
+          </motion.p>
+        </header>
 
         {/* Signing card */}
         <motion.div
