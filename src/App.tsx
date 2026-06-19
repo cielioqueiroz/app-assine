@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { motion } from "motion/react";
 import gsap from "gsap";
 import { Download, Eraser, Undo2, PenLine } from "lucide-react";
@@ -31,6 +31,17 @@ export default function App() {
   const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
   const scope = useRef<HTMLElement>(null);
+
+  // Move the amber halo to follow the cursor across the card.
+  const onCardMove = (e: MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.height) * 100;
+    e.currentTarget.style.setProperty("--gx", `${x}%`);
+    e.currentTarget.style.setProperty("--gy", `${y}%`);
+  };
+
+  const springy = { type: "spring", stiffness: 400, damping: 18 } as const;
 
   // GSAP: reveal the title letter by letter, pop the dot, float the badge.
   useEffect(() => {
@@ -104,8 +115,11 @@ export default function App() {
           initial={{ opacity: 0, y: 22, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, ease, delay: 0.1 }}
+          className="card-wrap"
+          onMouseMove={onCardMove}
         >
-          <Card className="overflow-hidden p-3">
+          <div className="card-glow" aria-hidden="true" />
+          <Card className="relative z-10 overflow-hidden p-3">
             <div className="relative aspect-[2/1] w-full">
               <SignaturePad
                 ref={padRef}
@@ -146,15 +160,18 @@ export default function App() {
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-2" role="radiogroup" aria-label="Cor da tinta">
               {INKS.map((ink) => (
-                <button
+                <motion.button
                   key={ink.value}
                   type="button"
                   role="radio"
                   aria-checked={color === ink.value}
                   aria-label={ink.name}
                   onClick={() => setColor(ink.value)}
+                  whileHover={{ scale: 1.18 }}
+                  whileTap={{ scale: 0.86 }}
+                  transition={springy}
                   className={cn(
-                    "size-7 rounded-full transition-transform duration-200 hover:scale-110",
+                    "size-7 rounded-full",
                     color === ink.value &&
                       "ring-2 ring-primary ring-offset-2 ring-offset-background",
                   )}
@@ -180,28 +197,34 @@ export default function App() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => padRef.current?.undo()}
-              disabled={empty}
-              aria-label="Desfazer último traço"
-              title="Desfazer"
-            >
-              <Undo2 />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => padRef.current?.clear()}
-              disabled={empty}
-            >
-              <Eraser />
-              Limpar
-            </Button>
-            <Button onClick={handleDownload} disabled={empty}>
-              <Download />
-              Baixar PNG
-            </Button>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ y: 0 }} transition={springy}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => padRef.current?.undo()}
+                disabled={empty}
+                aria-label="Desfazer último traço"
+                title="Desfazer"
+              >
+                <Undo2 />
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ y: 0 }} transition={springy}>
+              <Button
+                variant="outline"
+                onClick={() => padRef.current?.clear()}
+                disabled={empty}
+              >
+                <Eraser />
+                Limpar
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ y: -2 }} whileTap={{ y: 0 }} transition={springy}>
+              <Button className="btn-sheen" onClick={handleDownload} disabled={empty}>
+                <Download />
+                Baixar PNG
+              </Button>
+            </motion.div>
           </div>
         </motion.div>
 
